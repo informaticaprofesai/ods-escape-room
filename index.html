@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ODS Code Crew</title>
+  <title>ODS Escape Room</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h1>ODS Code Crew</h1>
+    <h1>ODS Escape Room</h1>
     <p>Escanea el código QR de tu fila y entra en el juego.</p>
 
     <div id="login">
@@ -19,11 +19,11 @@
 
     <div id="game" style="display:none;">
       <h2 id="title"></h2>
-      <p id="roleInfo"></p>
       <p id="question"></p>
       <div id="answers"></div>
       <p id="feedback"></p>
       <button id="nextBtn" onclick="nextQuestion()" style="display:none;">Siguiente</button>
+      <button id="resetBtn" onclick="resetGame()" style="display:none;">Reiniciar partida</button>
     </div>
   </div>
 
