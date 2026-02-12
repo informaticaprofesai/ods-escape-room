@@ -39,11 +39,3 @@ button:hover {
   margin-top: 10px;
   font-weight: bold;
 }
-
-#roleInfo.tripulante {
-  color: green;
-}
-
-#roleInfo.saboteador {
-  color: red;
-}
