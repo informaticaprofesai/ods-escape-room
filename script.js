@@ -1,4 +1,4 @@
-// Base de datos de preguntas por ODS
+// Base de datos de pruebas por ODS
 const questions = [
   {
     ods: "3 – Salud y bienestar",
@@ -52,8 +52,9 @@ const questions = [
 
 let teamCode = "";
 let playerName = "";
-let role = "";
 let currentQuestionIndex = 0;
+let score = 0;
+let startTime = 0;
 
 // Leer el equipo de la URL (ej. ?team=Fila1)
 function getTeamFromUrl() {
@@ -74,37 +75,10 @@ function joinTeam() {
     return;
   }
 
-  // Recuperamos la lista de jugadores de este equipo
-  const key = `team_${teamCode}`;
-  let teamData = JSON.parse(localStorage.getItem(key)) || {
-    players: [],
-    impostorIndex: -1
-  };
-
-  // Añadimos al jugador si no está ya
-  if (!teamData.players.includes(playerName)) {
-    teamData.players.push(playerName);
-  }
-
-  // Si es el primer jugador, elegimos saboteador al azar
-  if (teamData.impostorIndex === -1 && teamData.players.length > 0) {
-    teamData.impostorIndex = Math.floor(Math.random() * teamData.players.length);
-  }
-
-  // Guardamos de nuevo
-  localStorage.setItem(key, JSON.stringify(teamData));
-
-  // Determinamos el rol de este jugador
-  const impostorName = teamData.players[teamData.impostorIndex];
-  role = playerName === impostorName ? "saboteador" : "tripulante";
-
   document.getElementById("login").style.display = "none";
   document.getElementById("game").style.display = "block";
 
-  const roleInfo = document.getElementById("roleInfo");
-  roleInfo.textContent = `Rol: ${role === "tripulante" ? "Tripulante" : "Saboteador"}`;
-  roleInfo.className = role;
-
+  startTime = Date.now();
   showQuestion();
 }
 
@@ -117,32 +91,46 @@ function showQuestion() {
   document.getElementById("feedback").textContent = "";
   document.getElementById("nextBtn").style.display = "none";
 
-  q.answers.forEach((ans, idx) => {
+  // Mezclamos las respuestas y guardamos el índice correcto original
+  const shuffled = [...q.answers].map((value, index) => ({ value, index }));
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  // Guardamos cuál es la correcta en el orden mezclado
+  let correctInShuffled = -1;
+  shuffled.forEach((item, idx) => {
+    if (item.index === q.correct) {
+      correctInShuffled = idx;
+    }
+  });
+
+  // Guardamos en el elemento del DOM
+  answersDiv.dataset.correct = correctInShuffled;
+  answersDiv.dataset.explanation = q.explanation;
+
+  shuffled.forEach((item, idx) => {
     const btn = document.createElement("button");
-    btn.textContent = ans;
-    btn.onclick = () => checkAnswer(idx, q.correct, q.explanation);
+    btn.textContent = item.value;
+    btn.onclick = () => checkAnswer(idx);
     answersDiv.appendChild(btn);
   });
 }
 
-function checkAnswer(selectedIdx, correctIdx, explanation) {
+function checkAnswer(selectedIdx) {
+  const answersDiv = document.getElementById("answers");
+  const correctIdx = parseInt(answersDiv.dataset.correct, 10);
+  const explanation = answersDiv.dataset.explanation;
+
   const feedback = document.getElementById("feedback");
-  if (role === "tripulante") {
-    if (selectedIdx === correctIdx) {
-      feedback.textContent = "✅ ¡Correcto! Esta decisión contribuye a los ODS.";
-      feedback.style.color = "green";
-    } else {
-      feedback.textContent = "⚠️ Incorrecto. " + explanation;
-      feedback.style.color = "orange";
-    }
+  if (selectedIdx === correctIdx) {
+    feedback.textContent = "✅ ¡Correcto! Has obtenido una pista para escapar.";
+    feedback.style.color = "green";
+    score++;
   } else {
-    if (selectedIdx === correctIdx) {
-      feedback.textContent = "⚠️ Como saboteador, has elegido una opción sostenible. No estás cumpliendo tu misión.";
-      feedback.style.color = "orange";
-    } else {
-      feedback.textContent = "🟢 Has elegido una opción poco sostenible. ¡Perfecto para tu rol de saboteador!";
-      feedback.style.color = "red";
-    }
+    feedback.textContent = "⚠️ Incorrecto. " + explanation;
+    feedback.style.color = "orange";
   }
   document.getElementById("nextBtn").style.display = "inline-block";
 }
@@ -152,11 +140,26 @@ function nextQuestion() {
   if (currentQuestionIndex < questions.length) {
     showQuestion();
   } else {
+    const endTime = Date.now();
+    const time = Math.round((endTime - startTime) / 1000);
     document.getElementById("question").textContent =
-      `Fin de la misión para el equipo ${teamCode}.`;
+      `¡Enhorabuena! Has escapado del ODS Escape Room.`;
     document.getElementById("answers").innerHTML = "";
     document.getElementById("feedback").textContent =
-      `Habéis completado todas las decisiones. Ahora debéis discutir en grupo quién era el saboteador y por qué.`;
+      `Puntuación: ${score} de ${questions.length} | Tiempo: ${time} segundos`;
     document.getElementById("nextBtn").style.display = "none";
+    document.getElementById("resetBtn").style.display = "inline-block";
   }
+}
+
+function resetGame() {
+  currentQuestionIndex = 0;
+  score = 0;
+  startTime = Date.now();
+  document.getElementById("question").textContent = "";
+  document.getElementById("answers").innerHTML = "";
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("nextBtn").style.display = "none";
+  document.getElementById("resetBtn").style.display = "none";
+  showQuestion();
 }
